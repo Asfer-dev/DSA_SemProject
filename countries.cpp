@@ -196,7 +196,7 @@ public:
       path = nodes[temp].name + "  " + path;
       temp = parent[temp];
     }
-    if (counter == 0)
+    if (counter == 1)
     {
       cout << "The countries are not accessible by road ";
     }
@@ -502,7 +502,7 @@ int main()
     {
       string source;
       cout << "Enter source country: ";
-      getline(cin >> ws, source);
+      cin >> source;
       int temp = findCountry(nodes, 0, nodes.size() - 1, source);
       countriesGraph.prims(temp, nodes);
     }
