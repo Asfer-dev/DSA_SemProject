@@ -68,7 +68,7 @@ double haversineDistance(double lat1, double lon1, double lat2, double lon2)
 
   return distance;
 }
-int findCountry(vector<Node> nodes, int start, int end, string key);
+int findCountry(vector<Node> &nodes, string key);
 
 class Graph
 {
@@ -186,9 +186,16 @@ public:
     string path = "";
     cout << "Enter your destination country: ";
     getline(cin >> ws, destination);
+    temp = findCountry(nodes, destination);
+    if (temp == -1)
+    {
+      cout << endl
+           << "Country does not exist" << endl;
+      return;
+    }
     cout << endl
          << "Source :: ";
-    temp = findCountry(nodes, 0, nodes.size() - 1, destination);
+
     int counter = 0;
     while (temp != -1)
     {
@@ -281,30 +288,36 @@ public:
   }
 };
 
-int findCountry(vector<Node> nodes, int start, int end, string key)
+// int findCountry(vector<Node> nodes, int start, int end, string key)
+// {
+//   while (start <= end)
+//   {
+//     int mid = start + (end - start) / 2;
+//     if (nodes[mid].name == key)
+//     {
+//       return mid;
+//     }
+//     if (nodes[mid].name > key)
+//     {
+//       end = mid - 1;
+//     }
+//     else
+//     {
+//       start = mid + 1;
+//     }
+//   }
+//   return -1;
+// }
+int findCountry(vector<Node> &nodes, string key)
 {
-  if (start > end)
+  for (Node n : nodes)
   {
-    return -1;
-  }
-
-  else
-  {
-    int mid = (start + end) / 2;
-    // cout << start << " " << end << endl;
-    if (nodes[mid].name.compare(key) == 0)
+    if (n.name == key)
     {
-      return mid;
-    }
-    else if (nodes[mid].name.compare(key) > 0)
-    {
-      return findCountry(nodes, start, mid + 1, key);
-    }
-    else
-    {
-      return findCountry(nodes, mid - 1, end, key);
+      return n.id;
     }
   }
+  return -1;
 }
 
 int main()
@@ -457,10 +470,8 @@ int main()
     cout << "----------------------------------------------------------" << endl;
     cout << "Menu: " << endl;
     cout << "1: Print country data: " << endl;
-    cout << "2: BFS Traversal: " << endl;
-    cout << "3: DFS Traversal: " << endl;
-    cout << "4: Dijkstra Algorithm (Shortest Path): " << endl;
-    cout << "5: Prim's Algorithm (Minimum Spanning Tree): " << endl;
+    cout << "2: Dijkstra Algorithm (Shortest Path): " << endl;
+    cout << "3: Prim's Algorithm (Minimum Spanning Tree): " << endl;
     cout << "0: Exit: " << endl
          << endl;
     cout << "Enter: ";
@@ -472,39 +483,56 @@ int main()
     }
     if (option == 2)
     {
-      cout << "Enter starting point: ";
-      int vertex;
-      cin >> vertex;
-      cout << "BFS traversal: ";
-      countriesGraph.bfsTraversal(vertex);
-      cout << "...End..." << endl;
-    }
-    if (option == 3)
-    {
-      cout << "Enter starting point: ";
-      int vertex;
-      cin >> vertex;
-      cout << "DFS traversal: ";
-      countriesGraph.dfsTraversal(vertex);
-      cout << "...End..." << endl;
-    }
-    if (option == 4)
-    {
       string source;
       cout << "Enter your source country: ";
+
       getline(cin >> ws, source);
 
-      int temp = findCountry(nodes, 0, nodes.size() - 1, source);
+      int temp = findCountry(nodes, source);
 
-      countriesGraph.dijkstra(temp, nodes);
+      if (temp != -1)
+      {
+        countriesGraph.dijkstra(temp, nodes);
+      }
+      else
+      {
+        cout << endl
+             << "Country does not exist" << endl;
+      }
     }
-    if (option == 5)
+    if (option == 3)
     {
       string source;
       cout << "Enter source country: ";
       cin >> source;
-      int temp = findCountry(nodes, 0, nodes.size() - 1, source);
-      countriesGraph.prims(temp, nodes);
+      int temp = findCountry(nodes, source);
+      if (temp != -1)
+      {
+        countriesGraph.prims(temp, nodes);
+      }
+      else
+      {
+        cout << endl
+             << "Country does not exist" << endl;
+      }
+    }
+    if (option == 4)
+    {
+      for (int i = 0; i < nodes.size(); i++)
+      {
+        // int temp = findCountry(nodes, 0, 245, nodes[i].name);
+        int temp = findCountry(nodes, nodes[i].name);
+        if (temp == -1)
+        {
+          cout << temp << " Not found.........................................";
+        }
+        else
+        {
+          cout << temp << " " << nodes[temp].name;
+        }
+        cout << "  " << nodes[i].name << endl;
+        cout << endl;
+      }
     }
     if (option == 0)
     {
