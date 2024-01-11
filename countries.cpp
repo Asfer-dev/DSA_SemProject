@@ -7,6 +7,7 @@
 #include <queue>
 #include <stack>
 #include <omp.h>
+#include <climits>
 
 using namespace std;
 
