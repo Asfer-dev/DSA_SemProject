@@ -8,6 +8,9 @@
 #include <stack>
 #include <omp.h>
 #include <climits>
+#include <unordered_set>
+#include <algorithm>
+#include <cctype>
 
 using namespace std;
 
@@ -21,13 +24,14 @@ struct Node
   double latitude;
   double longitude;
   int population;
+  int area;
   vector<string> adjacentCountries;
 
   Node()
   {
   }
 
-  Node(int id, string code, string name, double latitude, double longitude, int population, vector<string> adjacentCountries)
+  Node(int id, string code, string name, double latitude, double longitude, int population, int area, vector<string> adjacentCountries)
   {
     this->id = id;
     this->code = code;
@@ -35,7 +39,40 @@ struct Node
     this->latitude = latitude;
     this->longitude = longitude;
     this->population = population;
+    this->area = area;
     this->adjacentCountries = adjacentCountries;
+  }
+  void displayNode()
+  {
+    cout << id << ". " << name << " (" << code << ")" << endl;
+    cout << "Population: " << this->population << endl;
+    cout << "Area in KM square: " << this->area << endl;
+    cout << "Adjacent Countries: ";
+    for (auto &c : adjacentCountries)
+    {
+      if (c == adjacentCountries[adjacentCountries.size() - 1])
+        cout << c;
+      else
+        cout << c << ", ";
+    }
+    cout << endl
+         << endl;
+  }
+  void displayNode(int count)
+  {
+    cout << count << ". " << name << " (" << code << ")" << endl;
+    cout << "Population: " << this->population << endl;
+    cout << "Area in KM square: " << this->area << endl;
+    cout << "Adjacent Countries: ";
+    for (auto &c : adjacentCountries)
+    {
+      if (c == adjacentCountries[adjacentCountries.size() - 1])
+        cout << c;
+      else
+        cout << c << ", ";
+    }
+    cout << endl
+         << endl;
   }
 };
 
@@ -69,15 +106,83 @@ double haversineDistance(double lat1, double lon1, double lat2, double lon2)
 
   return distance;
 }
+
 int findCountry(vector<Node> &nodes, string key);
+
+class PriorityQueue
+{
+public:
+  deque<Node> primarydq;
+  stack<Node> secondarys;
+  int priority;
+  PriorityQueue(int priority)
+  {
+    this->priority = priority;
+  }
+  void enqueue(Node node)
+  {
+    if (primarydq.empty())
+    {
+      primarydq.push_back(node);
+    }
+    else
+    {
+      bool condition;
+      if (this->priority == 0)
+        condition = !primarydq.empty() && primarydq.back().population > node.population;
+      else
+        condition = !primarydq.empty() && primarydq.back().area > node.area;
+      while (condition)
+      {
+        secondarys.push(primarydq.back());
+        primarydq.pop_back();
+        if (priority == 0)
+          condition = !primarydq.empty() && primarydq.back().population > node.population;
+        else
+          condition = !primarydq.empty() && primarydq.back().area > node.area;
+      }
+      primarydq.push_back(node);
+      while (!secondarys.empty())
+      {
+        primarydq.push_back(secondarys.top());
+        secondarys.pop();
+      }
+    }
+  }
+  void display(bool ascend)
+  {
+
+    int count = 0;
+    if (ascend)
+    {
+      while (!primarydq.empty())
+      {
+        count++;
+        primarydq.front().displayNode(count);
+        primarydq.pop_front();
+      }
+    }
+    else
+    {
+      while (!primarydq.empty())
+      {
+        count++;
+        primarydq.back().displayNode(count);
+        primarydq.pop_back();
+      }
+    }
+  }
+};
 
 class Graph
 {
 public:
-  vector<vector<int>> adjacencyMatrix;
+  vector<Node> nodes;
   int numberOfNodes;
+  vector<vector<int>> adjacencyMatrix;
   Graph(vector<Node> &nodes, vector<tuple<int, int, int>> &weightedEdges)
   {
+    this->nodes = nodes;
     numberOfNodes = nodes.size();
     // Initialize the adjacency matrix with infinity (assuming no direct connection)
     for (int i = 0; i < nodes.size(); ++i)
@@ -98,21 +203,105 @@ public:
     }
   }
 
-  void displayMatrix(vector<Node> nodes)
+  void displayCountry(int countryId)
+  {
+    cout << countryId << ". " << nodes[countryId].name << " (" << nodes[countryId].code << ")" << endl;
+    cout << "Population: " << nodes[countryId].population << endl;
+    cout << "Area in KM square: " << nodes[countryId].area << endl;
+    for (int j = 0; j < adjacencyMatrix.size(); j++)
+    {
+      if (adjacencyMatrix[nodes[countryId].id][j] != INT_MAX)
+      {
+        cout << nodes[j].name << ": " << to_string(adjacencyMatrix[nodes[countryId].id][j]) << "km -- ";
+      }
+    }
+    cout << "N/A" << endl
+         << endl;
+  }
+
+  void displayCountries()
   {
     for (int i = 0; i < adjacencyMatrix.size(); i++)
     {
-      cout << nodes[i].name << endl;
-      for (int j = 0; j < adjacencyMatrix.size(); j++)
+      displayCountry(i);
+    }
+  }
+
+  void searchCountries(string query)
+  {
+    transform(query.begin(), query.end(), query.begin(), [](unsigned char c)
+              { return tolower(c); });
+    for (auto &node : nodes)
+    {
+      string countryName = node.name;
+      transform(countryName.begin(), countryName.end(), countryName.begin(), [](unsigned char c)
+                { return tolower(c); });
+      if (countryName.find(query) != countryName.npos)
       {
-        if (adjacencyMatrix[i][j] != INT_MAX)
+        displayCountry(node.id);
+      }
+    }
+  }
+
+  vector<PriorityQueue> filterCountries(bool populationFlag, int populationLimit, bool areaFlag, int areaLimit)
+  {
+    PriorityQueue populationq(0);
+    PriorityQueue areaq(1);
+    for (auto &node : nodes)
+    {
+      if (populationFlag && areaFlag)
+      {
+        if (node.population >= populationLimit && node.area >= areaLimit)
         {
-          cout << nodes[j].name << ": " << to_string(adjacencyMatrix[i][j]) << "km -- ";
+          populationq.enqueue(node);
+          areaq.enqueue(node);
         }
       }
-      cout << "N/A" << endl
-           << endl;
+      else if (populationFlag && !areaFlag)
+      {
+        bool condition;
+        if (areaLimit == -1)
+          condition = node.population <= populationLimit;
+        else
+          condition = node.population >= populationLimit && node.area <= areaLimit;
+        if (condition)
+        {
+          populationq.enqueue(node);
+          areaq.enqueue(node);
+        }
+      }
+      else if (!populationFlag && areaFlag)
+      {
+        bool condition;
+        if (populationLimit == -1)
+          condition = node.area <= areaLimit;
+        else
+          condition = (node.population <= populationLimit) && (node.area >= areaLimit);
+        if (condition)
+        {
+          populationq.enqueue(node);
+          areaq.enqueue(node);
+        }
+      }
+      else
+      {
+        bool condition;
+        if (populationLimit == -1 && areaLimit == -1)
+          condition = true;
+        else if (populationLimit == -1 && areaLimit != -1)
+          condition = node.area <= areaLimit;
+        else if (populationLimit != -1 && areaLimit == -1)
+          condition = node.population <= populationLimit;
+        else
+          condition = node.population <= populationLimit && node.area <= areaLimit;
+        if (condition)
+        {
+          populationq.enqueue(node);
+          areaq.enqueue(node);
+        }
+      }
     }
+    return {populationq, areaq};
   }
 
   void bfsTraversal(int vertex)
@@ -169,40 +358,67 @@ public:
       }
     }
   }
-  void printPrims(int parent[], int distance[], vector<Node> nodes)
+  // void printPrims(int parent[], int distance[], vector<Node> nodes)
+  // {
+  //   cout << "Node  :  Parent  :  Weight" << endl;
+  //   for (int i = 0; i < numberOfNodes; i++)
+  //   {
+  //     if (distance[i] != INT_MAX)
+  //     {
+  //       cout << nodes[i].name << " :: " << nodes[parent[i]].name << " :: " << distance[i] << endl;
+  //     }
+  //   }
+  // }
+  void printPrims(const int parent[], const int distance[], const std::vector<Node> &nodes, int source) const
   {
-    cout << "Node  :  Parent  :  Weight" << endl;
+    std::cout << "Path from Source (" << nodes[source].name << ") to All Nodes:" << std::endl;
+
+    std::unordered_set<int> reachedNodes;
     for (int i = 0; i < numberOfNodes; i++)
     {
-      if (distance[i] != INT_MAX)
+      if (i != source)
       {
-        cout << nodes[i].name << " :: " << nodes[parent[i]].name << " :: " << distance[i] << endl;
+        std::cout << "Source (" << nodes[source].name << ") -> ";
+        printPath(parent, i, nodes);
+        std::cout << " : Weight = " << distance[i] << std::endl;
+
+        reachedNodes.insert(i);
       }
     }
-  }
-  void printDijkstra(int parent[], vector<Node> nodes)
-  {
-    int temp;
-    string destination;
-    string path = "";
-    cout << "Enter your destination country: ";
-    getline(cin >> ws, destination);
-    temp = findCountry(nodes, destination);
-    if (temp == -1)
+
+    if (reachedNodes.size() == numberOfNodes - 1)
     {
-      cout << endl
-           << "Country does not exist" << endl;
+      std::cout << "All nodes are reached." << std::endl;
+    }
+    else
+    {
+      std::cout << "Not all nodes are reached." << std::endl;
+    }
+  }
+  void printPath(const int parent[], int j, const std::vector<Node> &nodes) const
+  {
+    if (parent[j] == -1)
+    {
+      std::cout << nodes[j].name;
       return;
     }
+    printPath(parent, parent[j], nodes);
+    std::cout << " -> " << nodes[j].name;
+  }
+  void printDijkstra(int parent[], int distance[], vector<Node> nodes, int destination)
+  {
+    string path = "";
     cout << endl
          << "Source :: ";
 
     int counter = 0;
-    while (temp != -1)
+    int totalDistance = 0;
+    while (destination != -1)
     {
       counter++;
-      path = nodes[temp].name + "  " + path;
-      temp = parent[temp];
+      path = nodes[destination].name + "  " + path;
+      totalDistance += distance[destination];
+      destination = parent[destination];
     }
     if (counter == 1)
     {
@@ -213,6 +429,7 @@ public:
       cout << path;
     }
     cout << ":: Destination" << endl;
+    cout << "Total Distance: " << totalDistance << " KM" << endl;
   }
   int minimumUnvisitedNode(int distance[], bool visited[])
   {
@@ -227,7 +444,7 @@ public:
     }
     return minimum;
   }
-  void dijkstra(int source, vector<Node> nodes)
+  void dijkstra(int source, int destination, vector<Node> nodes)
   {
     int distance[numberOfNodes];
     bool visited[numberOfNodes];
@@ -255,7 +472,7 @@ public:
         }
       }
     }
-    printDijkstra(parent, nodes);
+    printDijkstra(parent, distance, nodes, destination);
   }
   void prims(int source, vector<Node> nodes)
   {
@@ -285,30 +502,30 @@ public:
         }
       }
     }
-    printPrims(parent, distance, nodes);
+    printPrims(parent, distance, nodes, source);
   }
 };
 
-// int findCountry(vector<Node> nodes, int start, int end, string key)
-// {
-//   while (start <= end)
-//   {
-//     int mid = start + (end - start) / 2;
-//     if (nodes[mid].name == key)
-//     {
-//       return mid;
-//     }
-//     if (nodes[mid].name > key)
-//     {
-//       end = mid - 1;
-//     }
-//     else
-//     {
-//       start = mid + 1;
-//     }
-//   }
-//   return -1;
-// }
+int findCountry(vector<Node> nodes, int start, int end, string key)
+{
+  while (start <= end)
+  {
+    int mid = (end + start) / 2;
+    if (nodes[mid].name.compare(key) == 0)
+    {
+      return mid;
+    }
+    if (nodes[mid].name.compare(key) > 0)
+    {
+      end = mid - 1;
+    }
+    else
+    {
+      start = mid + 1;
+    }
+  }
+  return -1;
+}
 int findCountry(vector<Node> &nodes, string key)
 {
   for (Node n : nodes)
@@ -340,6 +557,7 @@ int main()
     double latitude;
     double longitude;
     int population;
+    int area;
     vector<string> adjacentCountries;
     string ts;
 
@@ -386,27 +604,20 @@ int main()
       string temp = "";
       getline(lineString, temp, '"');
       ts += ',' + temp;
-      ts = ts.substr(1);
-      getline(lineString, temp, ',');
+      if (ts[ts.size() - 1] == ',')
+        ts = ts.substr(1, ts.size() - 2);
+      else
+        ts = ts.substr(1);
     }
     string countryName = "";
     for (int i = 0; i < ts.size(); i++)
     {
       if (ts[i] == ',')
       {
-        // for (auto &node : nodes)
-        // {
-        //   cout << (node.name) << " " << countryName << endl;
-        //   if (node.name.compare(countryName) == 0)
-        //   {
-        //     // adjacentCountries = new LinkedList(node, adjacentCountries);
-        //     adjacentCountries.push_back(countryName);
-        //   }
-        // }
         adjacentCountries.push_back(countryName);
         countryName = "";
       }
-      else if (ts[i] != ' ' && ts[i] != '"')
+      else if (ts[i] != '"')
       {
         countryName += ts[i];
       }
@@ -415,7 +626,13 @@ int main()
     countryName = "";
     ts = "";
 
-    Node node((i), code, name, latitude, longitude, population, adjacentCountries);
+    getline(lineString, ts, ',');
+    ts = "";
+    getline(lineString, ts, ',');
+    area = atoi(ts.c_str());
+    ts = "";
+
+    Node node((i), code, name, latitude, longitude, population, area, adjacentCountries);
     nodes.push_back(node);
     line = "";
     i++;
@@ -470,9 +687,11 @@ int main()
   {
     cout << "----------------------------------------------------------" << endl;
     cout << "Menu: " << endl;
-    cout << "1: Print country data: " << endl;
-    cout << "2: Dijkstra Algorithm (Shortest Path): " << endl;
-    cout << "3: Prim's Algorithm (Minimum Spanning Tree): " << endl;
+    cout << "1: Print country data" << endl;
+    cout << "2: Search for a Country" << endl;
+    cout << "3: Filter Countries" << endl;
+    cout << "4: Find Shortest Path between two Countries" << endl;
+    cout << "5: Prim's Algorithm (Minimum Spanning Tree)" << endl;
     cout << "0: Exit: " << endl
          << endl;
     cout << "Enter: ";
@@ -480,20 +699,113 @@ int main()
     cout << "----------------------------------------------------------" << endl;
     if (option == 1)
     {
-      countriesGraph.displayMatrix(nodes);
+      countriesGraph.displayCountries();
     }
-    if (option == 2)
+    else if (option == 2)
+    {
+      string query;
+      cout << "Enter your query: ";
+      getline(cin >> ws, query);
+      cout << endl;
+      countriesGraph.searchCountries(query);
+    }
+    else if (option == 3)
+    {
+      int option1;
+      bool populationFlag = true;
+      int populationLimit = -1;
+      bool areaFlag = true;
+      int areaLimit = -1;
+      while (true)
+      {
+        cout << "1: Enter Population Criteria" << endl;
+        cout << "2: Enter Area Criteria" << endl;
+        cout << "3: Print List" << endl;
+        cout << "0: Back" << endl;
+        cout << "Enter: ";
+        cin >> option1;
+        if (option1 == 1)
+        {
+          cout << "----------------------------------------------------------" << endl;
+          cout << "Enter Population Threshold: ";
+          cin >> populationLimit;
+          cout << "Do you want countries less than the threshold (0) or greater than it (1)?: ";
+          cin >> populationFlag;
+          cout << "----------------------------------------------------------" << endl;
+        }
+        else if (option1 == 2)
+        {
+          cout << "----------------------------------------------------------" << endl;
+          cout << "Enter Area Threshold: ";
+          cin >> areaLimit;
+          cout << "Do you want countries less than the threshold (0) or greater than it (1)?: ";
+          cin >> areaFlag;
+          cout << "----------------------------------------------------------" << endl;
+        }
+        else if (option1 == 3)
+        {
+          vector<PriorityQueue> queues = countriesGraph.filterCountries(populationFlag, populationFlag, areaFlag, areaLimit);
+          PriorityQueue populationq = queues[0];
+          PriorityQueue areaq = queues[1];
+          int option2;
+          while (true)
+          {
+            cout << "----------------------------------------------------------" << endl;
+            cout << "1: Sort by Population" << endl;
+            cout << "2: Sort by Area" << endl;
+            cout << "0: Back" << endl;
+            cout << "Enter: ";
+            cin >> option2;
+
+            if (option2 == 1)
+            {
+              cout << "----------------------------------------------------------" << endl;
+              bool ascend;
+              cout << "Lowest first (1) or Highest first (0): ";
+              cin >> ascend;
+              populationq.display(ascend);
+              cout << "----------------------------------------------------------" << endl;
+            }
+            else if (option2 == 2)
+            {
+              cout << "----------------------------------------------------------" << endl;
+              bool ascend;
+              cout << "Lowest first (1) or Highest first (0): ";
+              cin >> ascend;
+              areaq.display(ascend);
+              cout << "----------------------------------------------------------" << endl;
+            }
+            else
+            {
+              break;
+            }
+          }
+        }
+        else if (option1 == 0)
+        {
+          break;
+        }
+      }
+    }
+    else if (option == 4)
     {
       string source;
       cout << "Enter your source country: ";
-
       getline(cin >> ws, source);
 
-      int temp = findCountry(nodes, source);
+      int sourceId = findCountry(nodes, source);
 
-      if (temp != -1)
+      if (sourceId != -1)
       {
-        countriesGraph.dijkstra(temp, nodes);
+        string destination;
+        cout << "Enter your destination country: ";
+        getline(cin >> ws, destination);
+        int destId = findCountry(nodes, destination);
+        if (destId != -1)
+          countriesGraph.dijkstra(sourceId, destId, nodes);
+        else
+          cout << endl
+               << "Country does not exist" << endl;
       }
       else
       {
@@ -501,7 +813,7 @@ int main()
              << "Country does not exist" << endl;
       }
     }
-    if (option == 3)
+    else if (option == 5)
     {
       string source;
       cout << "Enter source country: ";
@@ -517,25 +829,7 @@ int main()
              << "Country does not exist" << endl;
       }
     }
-    if (option == 4)
-    {
-      for (int i = 0; i < nodes.size(); i++)
-      {
-        // int temp = findCountry(nodes, 0, 245, nodes[i].name);
-        int temp = findCountry(nodes, nodes[i].name);
-        if (temp == -1)
-        {
-          cout << temp << " Not found.........................................";
-        }
-        else
-        {
-          cout << temp << " " << nodes[temp].name;
-        }
-        cout << "  " << nodes[i].name << endl;
-        cout << endl;
-      }
-    }
-    if (option == 0)
+    else
     {
       break;
     }
