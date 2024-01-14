@@ -199,7 +199,7 @@ public:
       int cost = get<2>(edge);
       adjacencyMatrix[from][to] = cost;
       // If the graph is undirected, uncomment the line below
-      // adjacencyMatrix[to][from] = cost;
+      adjacencyMatrix[to][from] = cost;
     }
   }
 
@@ -320,10 +320,10 @@ public:
       if (visited[vertex] == false)
       {
         visited[vertex] = true;
-        cout << vertex << " ";
+        cout << nodes[vertex].name << " -> ";
         for (int i = 0; i < numberOfNodes; i++)
         {
-          if (adjacencyMatrix[vertex][i] == true)
+          if (adjacencyMatrix[vertex][i] != INT_MAX)
           {
             q.push(i);
           }
@@ -347,10 +347,10 @@ public:
       if (visited[vertex] == false)
       {
         visited[vertex] = true;
-        cout << vertex << " ";
+        cout << nodes[vertex].name << " -> ";
         for (int i = 0; i < numberOfNodes; i++)
         {
-          if (adjacencyMatrix[vertex][i] == true)
+          if (adjacencyMatrix[vertex][i] != INT_MAX)
           {
             s.push(i);
           }
@@ -358,53 +358,26 @@ public:
       }
     }
   }
-  // void printPrims(int parent[], int distance[], vector<Node> nodes)
-  // {
-  //   cout << "Node  :  Parent  :  Weight" << endl;
-  //   for (int i = 0; i < numberOfNodes; i++)
-  //   {
-  //     if (distance[i] != INT_MAX)
-  //     {
-  //       cout << nodes[i].name << " :: " << nodes[parent[i]].name << " :: " << distance[i] << endl;
-  //     }
-  //   }
-  // }
-  void printPrims(const int parent[], const int distance[], const std::vector<Node> &nodes, int source) const
+  void printPrims(int parent[], int distance[], vector<Node> nodes, int source)
   {
-    std::cout << "Path from Source (" << nodes[source].name << ") to All Nodes:" << std::endl;
-
-    std::unordered_set<int> reachedNodes;
+    // for (int i = 0; i < numberOfNodes; i++) {
+    //   if (parent[i] == -1) {
+    //     nodes[findCountry(nodes[i].adjacentCountries[0])]
+    //   }
+    // }
+    vector<tuple<int, int, int>> edges;
     for (int i = 0; i < numberOfNodes; i++)
     {
-      if (i != source)
+      if (distance[i] != INT_MAX && parent[i] != -1)
       {
-        std::cout << "Source (" << nodes[source].name << ") -> ";
-        printPath(parent, i, nodes);
-        std::cout << " : Weight = " << distance[i] << std::endl;
-
-        reachedNodes.insert(i);
+        tuple<int, int, int> edge = make_tuple(i, parent[i], distance[i]);
+        edges.push_back(edge);
       }
     }
+    Graph minSpan(nodes, edges);
+    minSpan.dfsTraversal(source);
+  }
 
-    if (reachedNodes.size() == numberOfNodes - 1)
-    {
-      std::cout << "All nodes are reached." << std::endl;
-    }
-    else
-    {
-      std::cout << "Not all nodes are reached." << std::endl;
-    }
-  }
-  void printPath(const int parent[], int j, const std::vector<Node> &nodes) const
-  {
-    if (parent[j] == -1)
-    {
-      std::cout << nodes[j].name;
-      return;
-    }
-    printPath(parent, parent[j], nodes);
-    std::cout << " -> " << nodes[j].name;
-  }
   void printDijkstra(int parent[], int distance[], vector<Node> nodes, int destination)
   {
     string path = "";

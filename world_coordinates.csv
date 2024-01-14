@@ -103,7 +103,7 @@ IN,India,20.593684,78.96288,1428627663,"""Pakistan,China,Nepal,Bhutan,Bangladesh
 ID,Indonesia,-0.789275,113.921327,277534122,"""Papua New Guinea,East Timor,Malaysia,""",1811570
 IR,Iran,32.427908,53.688046,89172767,"""Iraq,Turkey,Armenia,Azerbaijan,Turkmenistan,Afghanistan,Pakistan,""",1628550
 IQ,Iraq,33.223191,43.679291,45504560,"""Turkey,Iran,Kuwait,Saudi Arabia,Jordan,Syria,""",434320
-IE,Ireland,53.41291,-8.24389,5056935,"""United Kingdom (Northern Ireland),""",68890
+IE,Ireland,53.41291,-8.24389,5056935,"""United Kingdom,""",68890
 IM,Isle of Man,54.236107,-4.548056,84710,"""None (Crown Dependency of the UK),""",572
 IT,Italy,41.87194,12.56738,58870762,"""France,Switzerland,Austria,Slovenia,San Marino,Vatican City,""",294140
 JM,Jamaica,18.109581,-77.297508,2825544,"""None (Island nation),""",10830
@@ -227,11 +227,11 @@ TC,Turks and Caicos Islands,21.694025,-71.797928,46062,"""None (British Overseas
 TV,Tuvalu,-7.109535,177.64933,11396,"""None (Island nation),""",30
 VI,U.S. Virgin Islands,18.335765,-64.896335,98750,"""None (Territory of the USA),""",346
 UG,Uganda,1.373333,32.290275,48582334,"""Kenya,South Sudan,Democratic Republic of the Congo,Rwanda,Tanzania,""",199810
-GB,UK,55.378051,-3.435973,67736802,"""Ireland (Only land border is with Northern Ireland),""",241930
+GB,United Kingdom,55.378051,-3.435973,67736802,"""Ireland (Only land border is with Northern Ireland),""",241930
 UA,Ukraine,48.379433,31.16558,36744634,"""Belarus,Russia,Poland,Slovakia,Hungary,Romania,Moldova,""",579320
 AE,United Arab Emirates,23.424076,53.847818,9365000,"""Oman,Saudi Arabia,""",83600
 UY,Uruguay,-32.522779,-55.765835,3423108,"""Brazil,Argentina,Australia,British Indian Ocean Territory,""",175020
-US,US,37.09024,-95.712891,339996563,"""Canada,Mexico,""",9147420
+US,United States,37.09024,-95.712891,339996563,"""Canada,Mexico,""",9147420
 UZ,Uzbekistan,41.377491,64.585262,35163944,"""Kazakhstan,Turkmenistan,Afghanistan,Tajikistan,Kyrgyzstan,""",425400
 VU,Vanuatu,-15.376706,166.959158,334506,"""None (Island nation),""",12190
 VA,Vatican City,41.902916,12.453389,1500,"""Italy,""",1
