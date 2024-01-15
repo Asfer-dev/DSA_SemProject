@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include <algorithm>
 #include <cctype>
-
+#include <ctime>
 using namespace std;
 
 struct LinkedList;
@@ -330,6 +330,7 @@ public:
         }
       }
     }
+    cout << " N/A " << endl;
   }
   void dfsTraversal(int vertex)
   {
@@ -357,6 +358,7 @@ public:
         }
       }
     }
+    cout << " N/A " << endl;
   }
   void printPrims(int parent[], int distance[], vector<Node> nodes, int source)
   {
@@ -375,7 +377,18 @@ public:
       }
     }
     Graph minSpan(nodes, edges);
-    minSpan.dfsTraversal(source);
+    cout << "Press 0 to display minimum spanning tree with bfs traversal otherwise, press 1 to display in dfs traversal: ";
+    int option;
+    cin >> option;
+    cout << endl;
+    if (option == 0)
+    {
+      minSpan.bfsTraversal(source);
+    }
+    else if (option == 1)
+    {
+      minSpan.dfsTraversal(source);
+    }
   }
 
   void printDijkstra(int parent[], int distance[], vector<Node> nodes, int destination)
@@ -652,9 +665,8 @@ int main()
     //   p = p->next;
     // } while (p != node.adjacentCountries);
   }
-
   Graph countriesGraph(nodes, weightedEdges);
-
+  stack<pair<string, time_t>> searchHistory;
   int option;
   while (true)
   {
@@ -662,9 +674,12 @@ int main()
     cout << "Menu: " << endl;
     cout << "1: Print country data" << endl;
     cout << "2: Search for a Country" << endl;
-    cout << "3: Filter Countries" << endl;
-    cout << "4: Find Shortest Path between two Countries" << endl;
-    cout << "5: Prim's Algorithm (Minimum Spanning Tree)" << endl;
+    cout << "3: See search history" << endl;
+    cout << "4: Filter Countries" << endl;
+    cout << "5: Find Shortest Path between two Countries" << endl;
+    cout << "6: Prim's Algorithm (Minimum Spanning Tree)" << endl;
+    cout << "7: BFS Traversal of countries" << endl;
+    cout << "8: DFS Traversal of countries" << endl;
     cout << "0: Exit: " << endl
          << endl;
     cout << "Enter: ";
@@ -676,13 +691,44 @@ int main()
     }
     else if (option == 2)
     {
+      time_t now = time(0);
       string query;
       cout << "Enter your query: ";
       getline(cin >> ws, query);
+      pair<string, int> pair = make_pair(query, now);
+      searchHistory.push(pair);
       cout << endl;
       countriesGraph.searchCountries(query);
     }
     else if (option == 3)
+    {
+      stack<pair<string, time_t>> secondaryStack;
+      if (searchHistory.empty() == true)
+      {
+        cout << "No recent search history" << endl;
+      }
+      else
+      {
+        cout << "Recent Search History: " << endl
+             << endl;
+        int counter = 1;
+        while (searchHistory.empty() == false)
+        {
+          cout << counter << ": " << searchHistory.top().first << "    ";
+          char *dt = ctime(&searchHistory.top().second);
+          cout << dt;
+          counter++;
+          secondaryStack.push(searchHistory.top());
+          searchHistory.pop();
+        }
+        while (secondaryStack.empty() == false)
+        {
+          searchHistory.push(secondaryStack.top());
+          secondaryStack.pop();
+        }
+      }
+    }
+    else if (option == 4)
     {
       int option1;
       bool populationFlag = true;
@@ -760,7 +806,7 @@ int main()
         }
       }
     }
-    else if (option == 4)
+    else if (option == 5)
     {
       string source;
       cout << "Enter your source country: ";
@@ -786,15 +832,49 @@ int main()
              << "Country does not exist" << endl;
       }
     }
-    else if (option == 5)
+    else if (option == 6)
+    {
+      string source;
+      cout << "Enter source country: ";
+      getline(cin >> ws, source);
+      int sourceID = findCountry(nodes, source);
+      if (sourceID != -1)
+      {
+        countriesGraph.prims(sourceID, nodes);
+      }
+      else
+      {
+        cout << endl
+             << "Country does not exist" << endl;
+      }
+    }
+    else if (option == 7)
     {
       string source;
       cout << "Enter source country: ";
       cin >> source;
-      int temp = findCountry(nodes, source);
-      if (temp != -1)
+      cout << endl;
+      int sourceID = findCountry(nodes, source);
+      if (sourceID != -1)
       {
-        countriesGraph.prims(temp, nodes);
+        countriesGraph.bfsTraversal(sourceID);
+      }
+      else
+      {
+        cout << endl
+             << "Country does not exist" << endl;
+      }
+    }
+    else if (option == 8)
+    {
+      string source;
+      cout << "Enter source country: ";
+      cin >> source;
+      cout << endl;
+      int sourceID = findCountry(nodes, source);
+      if (sourceID != -1)
+      {
+        countriesGraph.dfsTraversal(sourceID);
       }
       else
       {
